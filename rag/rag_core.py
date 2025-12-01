@@ -55,7 +55,7 @@ class DocChunk:
 
 
 # ========== Advanced Chunking Strategies ==========
-def chunk_text_advanced(
+def chunk_text(
     text: str,
     strategy: str = "recursive",
     max_tokens: int = 1000,

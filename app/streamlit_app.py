@@ -15,7 +15,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Import RAG functions
 from rag.rag_core import (
-    chunk_text_advanced,
+    chunk_text,
     extract_keywords_simple,
     generate_document_summary,
     build_vector_store_with_metadata,
