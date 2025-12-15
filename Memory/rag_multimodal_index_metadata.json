@@ -1,0 +1,591 @@
+[
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 0,
+    "text": "The paper \"Attention Is All You Need\" proposes a new neural network architecture called the Transformer, which replaces traditional recurrent and convolutional networks with attention mechanisms. The Transformer achieves state-of-the-art results in machine translation and constituency parsing tasks, requiring less training time and parallelization.",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 0,
+      "category": "TEXT",
+      "keywords": "attention, model, this",
+      "content_type": "text"
+    },
+    "content_type": "text",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 1,
+    "text": "The text discusses the limitations of recurrent neural networks in sequence modeling and transduction tasks, such as language modeling and machine translation. It proposes a new model architecture, the Transformer, which relies entirely on self-attention mechanisms to draw global dependencies between input and output sequences, allowing for significant parallelization and improved performance.",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 1,
+      "category": "TEXT",
+      "keywords": "attention, model, this",
+      "content_type": "text"
+    },
+    "content_type": "text",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 2,
+    "text": "The Transformer model architecture consists of an encoder and decoder with stacked self-attention and feed-forward layers. The encoder maps input sequences to continuous representations and the decoder generates output sequences one element at a time, using residual connections and layer normalization. The decoder's self-attention sub-layer is modified to prevent attending to subsequent positions, ensuring that predictions depend only on known outputs.",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 2,
+      "category": "TEXT",
+      "keywords": "attention, model, this",
+      "content_type": "text"
+    },
+    "content_type": "text",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 3,
+    "text": "This text describes the concept of an attention function in machine learning, specifically the Scaled Dot-Product Attention mechanism. It explains how this mechanism maps a query and key-value pairs to an output, using a weighted sum of the values based on compatibility calculated through dot products and softmax function. It also compares this mechanism to additive attention, noting the dot-product attention's advantages in speed and space efficiency, but also its potential limitations for larg",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 3,
+      "category": "TEXT",
+      "keywords": "attention, model, this",
+      "content_type": "text"
+    },
+    "content_type": "text",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 4,
+    "text": "The Transformer model uses multi-head attention, which projects queries, keys, and values h times with different linear projections, then performs attention in parallel, and concatenates the outputs. This allows the model to jointly attend to information from different representation subspaces. The model employs 8 parallel attention layers, with reduced dimensionality, resulting in a similar computational cost to single-head attention. Multi-head attention is used in three ways: encoder-decoder ",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 4,
+      "category": "TEXT",
+      "keywords": "attention, model, this",
+      "content_type": "text"
+    },
+    "content_type": "text",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 5,
+    "text": "In the encoder and decoder, each layer contains a position-wise feed-forward network, consisting of two linear transformations with ReLU activation in between, applied to each position separately. The model also uses learned embeddings to convert input and output tokens to vectors, shared weights for embedding layers and pre-softmax linear transformation, and positional encoding to inject information about token order in the sequence, implemented using sine and cosine functions of different freq",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 5,
+      "category": "TEXT",
+      "keywords": "attention, model, this",
+      "content_type": "text"
+    },
+    "content_type": "text",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 6,
+    "text": "Self-attention layers are compared to recurrent and convolutional layers for sequence transduction tasks. Self-attention layers have advantages in terms of computational complexity, parallelization, and learning long-range dependencies due to shorter path lengths. They are faster than recurrent layers when sequence length is smaller than representation dimensionality, and can be further optimized by restricting attention to a neighborhood.",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 6,
+      "category": "TEXT",
+      "keywords": "attention, model, this",
+      "content_type": "text"
+    },
+    "content_type": "text",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 7,
+    "text": "The training regime for the models consisted of 4 components: \n\n- Training data and batching, where the models were trained on large datasets with byte-pair encoding and batched by sequence length.\n- Hardware and schedule, where the models were trained on 8 NVIDIA P100 GPUs for a total of 12-3.5 days.\n- Optimizer, where the Adam optimizer was used with a varying learning rate and warm-up period.\n- Regularization, where three types of regularization were employed: Residual Dropout, Label Smoothin",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 7,
+      "category": "TEXT",
+      "keywords": "attention, model, this",
+      "content_type": "text"
+    },
+    "content_type": "text",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 8,
+    "text": "Researchers achieved state-of-the-art results in machine translation tasks using the Transformer model, outperforming previous models by a significant margin in both English-to-German and English-to-French translation tasks. The big Transformer model achieved a BLEU score of 28.4 in English-to-German and 41.0 in English-to-French, with a training cost that was significantly lower than the previous state-of-the-art models. The model's performance was also improved by varying its components, inclu",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 8,
+      "category": "TEXT",
+      "keywords": "attention, model, this",
+      "content_type": "text"
+    },
+    "content_type": "text",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 9,
+    "text": "The Transformer model was evaluated on English constituency parsing, a task with strong structural constraints and long output compared to input. Despite not being task-specifically tuned, the model achieved state-of-the-art results, outperforming RNN sequence-to-sequence models and Berkeley-Parser when trained on a small dataset of 40K sentences.",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 9,
+      "category": "TEXT",
+      "keywords": "attention, model, this",
+      "content_type": "text"
+    },
+    "content_type": "text",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 10,
+    "text": "This work presents the Transformer, a sequence transduction model based on attention, replacing recurrent layers with multi-headed self-attention. The Transformer achieves a new state of the art in English-to-German and English-to-French translation tasks, outperforming all previously reported ensembles. The authors plan to extend the Transformer to tasks involving input and output modalities other than text and investigate local attention mechanisms for handling large inputs and outputs.",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 10,
+      "category": "TEXT",
+      "keywords": "attention, model, this",
+      "content_type": "text"
+    },
+    "content_type": "text",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 11,
+    "text": "This document appears to be a collection of references and visualizations related to deep learning and natural language processing. The references include several research papers on topics such as computer vision, neural machine translation, and attention mechanisms. The visualizations, specifically Figures 3-5, demonstrate the attention mechanism's ability to follow long-distance dependencies and exhibit behavior related to sentence structure.",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 11,
+      "category": "TEXT",
+      "keywords": "attention, model, this",
+      "content_type": "text"
+    },
+    "content_type": "text",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 12,
+    "text": "This image illustrates the architecture of a Transformer model, which is a neural network design primarily used for sequence-to-sequence tasks. The diagram is divided into an encoder stack on the left and a decoder stack on the right, connected in the middle and culminating in output layers.\n\n**Overall Structure:**\nThe model shows two main vertical pipelines: an \"Encoder\" on the left and a \"Decoder\" on the right. Both stacks are composed of `N` identical layers, indicated by \"Nx\" next to the enc",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 12,
+      "category": "IMAGE",
+      "keywords": "attention, model, this",
+      "content_type": "image"
+    },
+    "content_type": "image",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 13,
+    "text": "This image displays a flowchart-style diagram illustrating the \"Scaled Dot-Product Attention\" mechanism.\n\nKey elements and flow:\n1.  **Inputs:** At the bottom, there are three distinct inputs labeled **Q**, **K**, and **V**, positioned from left to right.\n2.  **First MatMul:** Inputs **Q** and **K** feed into a purple rectangular box labeled **\"MatMul\"** (Matrix Multiplication).\n3.  **Scale:** The output of the first \"MatMul\" flows into a yellow rectangular box labeled **\"Scale\"**.\n4.  **Mask (o",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 13,
+      "category": "IMAGE",
+      "keywords": "attention, model, this",
+      "content_type": "image"
+    },
+    "content_type": "image",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 14,
+    "text": "The image displays a computational diagram, likely representing a Multi-Head Attention mechanism. The flow is depicted from bottom to top.\n\nKey elements include:\n\n1.  **Inputs (Bottom):** Three capitalized letters, \"V\", \"K\", and \"Q\", are positioned horizontally at the bottom, representing input vectors or matrices (Value, Key, Query).\n2.  **Linear Transformations:** Each input (V, K, Q) is connected by a black upward arrow to a separate, light gray rectangular block labeled \"Linear\". These three",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 14,
+      "category": "IMAGE",
+      "keywords": "attention, model, this",
+      "content_type": "image"
+    },
+    "content_type": "image",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 15,
+    "text": "This image displays a self-attention visualization for a sequence of text.\n\n**Key Visual Elements:**\n\n1.  **Two Text Sequences:** The image contains two identical text sequences, arranged vertically, one above the other. Both sequences read: \"It is in this spirit that a majority of American governments have passed new laws since 2009 making the registration or voting process more difficult . <EOS> <pad> <pad> <pad> <pad> <pad> <pad>\".\n2.  **Highlighted Query Word:** In the top text sequence, the",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 15,
+      "category": "IMAGE",
+      "keywords": "attention, model, this",
+      "content_type": "image"
+    },
+    "content_type": "image",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 16,
+    "text": "The image displays a visualization of word connections, likely representing attention mechanisms in natural language processing, arranged in four vertical sections.\n\nEach section contains two identical horizontal lines of text, tokenized as: \"The Law will never be perfect , but its application should be just - this is what we are missing , in my opinion . <EOS> <pad>\". Purple lines connect words from the upper line to words in the lower line, with varying thickness and opacity indicating connect",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 16,
+      "category": "IMAGE",
+      "keywords": "attention, model, this",
+      "content_type": "image"
+    },
+    "content_type": "image",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 17,
+    "text": "This image displays a word alignment or attention visualization, presenting two identical sentences arranged horizontally, one above the other, with green lines connecting words between the two rows.\n\n**Key Visual Elements:**\n\n*   **Two Rows of Text:** There are two horizontal rows of text, appearing to be the same sentence.\n    *   **Top Row (Source/Query):** The words are rotated 90 degrees counter-clockwise and read vertically from top to bottom. The sentence is: \"The Law will never be perfec",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 17,
+      "category": "IMAGE",
+      "keywords": "attention, model, this",
+      "content_type": "image"
+    },
+    "content_type": "image",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  },
+  {
+    "doc_id": "1706.03762v7.pdf",
+    "chunk_id": 18,
+    "text": "The image displays a white background featuring a two-row text sequence connected by a complex network of red lines, visualizing attention weights or relationships between words.\n\n**Text Content:**\n*   The same sentence is presented vertically in both the top and bottom rows, running from left to right across the image.\n*   The text reads: \"The Law will never be perfect , but its application should be just - this is what we are missing , in my opinion . <EOS> <pad>\".\n*   Each word in the top row",
+    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "meta": {
+      "doc_id": "1706.03762v7.pdf",
+      "chunk_id": 18,
+      "category": "IMAGE",
+      "keywords": "attention, model, this",
+      "content_type": "image"
+    },
+    "content_type": "image",
+    "metadata": {
+      "filename": "1706.03762v7.pdf",
+      "file_size": 39805,
+      "creation_date": "2025-12-15T11:58:20.138629",
+      "page_count": 12,
+      "keywords": [
+        "attention",
+        "model",
+        "this",
+        "output",
+        "sequence"
+      ],
+      "summary": "3\n\n2023\n\n2\n\n0\n\n2\n\ng u A 2 ] L C . s c [ 7 v 2 6 7 3 0 . 6 0\n\n7\n\n1\n\n:\n\nv\n\narXiv\n\ni\n\nX\n\nr\n\na\n\nProvided proper attribution is provided, Google hereby gra...",
+      "document_type": "PDF"
+    }
+  }
+]

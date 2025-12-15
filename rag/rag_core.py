@@ -1,31 +1,74 @@
 import os
 import json
 import faiss
+import base64
 from typing import List, Dict, Tuple, Any, Optional
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from tqdm import tqdm
 from collections import Counter
+from io import BytesIO
+from PIL import Image
 
 import numpy as np
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from langchain_community. docstore.in_memory import InMemoryDocstore
+from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_core.embeddings import Embeddings
 from dotenv import load_dotenv
+import google.generativeai as genai
+
+# Import PDF libraries with fallback
+UNSTRUCTURED_AVAILABLE = False
+try:
+    from unstructured.partition.pdf import partition_pdf
+    from unstructured.partition.docx import partition_docx
+    UNSTRUCTURED_AVAILABLE = True
+    print("✅ Unstructured library available")
+except ImportError:
+    print("⚠️ Unstructured library not available, using fallback PDF processing")
+
+# Fallback PDF libraries
+try:
+    import pdfplumber
+    PDFPLUMBER_AVAILABLE = True
+except ImportError:
+    PDFPLUMBER_AVAILABLE = False
+    print("⚠️ pdfplumber not available")
+
+try:
+    from PyPDF2 import PdfReader
+    PYPDF2_AVAILABLE = True
+except ImportError:
+    PYPDF2_AVAILABLE = False
+    print("⚠️ PyPDF2 not available")
+
+try:
+    from docx import Document
+    PYTHON_DOCX_AVAILABLE = True
+except ImportError:
+    PYTHON_DOCX_AVAILABLE = False
+    print("⚠️ python-docx not available")
 
 load_dotenv()
 
 # ========== Configuration ==========
 def get_groq_client() -> Groq:
     """Get GROQ API client"""
-    api_key = os.environ.get("GROQ_API_KEY", ""). strip()
+    api_key = os.environ.get("GROQ_API_KEY", "").strip()
     if not api_key:
-        raise RuntimeError("GROQ_API_KEY not set.  Provide it via env or a .env file.")
+        raise RuntimeError("GROQ_API_KEY not set.  Provide it via env or a . env file.")
     return Groq(api_key=api_key)
 
+def get_gemini_client():
+    """Get Gemini API client"""
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY not set. Provide it via env or a .env file.")
+    genai.configure(api_key=api_key)
+    return genai.GenerativeModel('models/gemini-2.5-flash')
 
 # ========== Document Metadata Dataclass ==========
 @dataclass
@@ -52,6 +95,285 @@ class DocChunk:
     chunk_size: int = 1000
     chunk_overlap: int = 100
     metadata: Optional[DocumentMetadata] = None
+    content_type: str = "text"
+    page_number: Optional[int] = None
+
+
+# ========== Simple Element Class for Fallback ==========
+class SimpleElement: 
+    """Simple element class for fallback PDF processing"""
+    def __init__(self, text: str, page_num: Optional[int] = None, element_type: str = "text"):
+        self.text = text
+        self.element_type = element_type
+        self.metadata = type('obj', (object,), {
+            'page_number': page_num,
+            'text_as_html': text if element_type == "table" else None
+        })()
+    
+    def __str__(self):
+        return self.text
+
+# ========== Multimodal Extraction Functions ==========
+def extract_elements_from_pdf(file_path: str, output_path: str = "./content/") -> Tuple[List, List[str], Dict]:
+    """
+    Extract elements from PDF including text, tables, and images with fallback support
+    Returns: (elements, image_base64_list, page_map)
+    """
+    print(f"🔍 Extracting from PDF: {file_path}")
+    
+    # Remove the duplicate SimpleElement class here! 
+    # It's already defined globally above
+    
+    # Try Method 1: Unstructured (requires Poppler)
+    if UNSTRUCTURED_AVAILABLE:  # Add this check! 
+        try:
+            from unstructured.partition.pdf import partition_pdf
+            
+            print("📄 Trying unstructured library...")
+            chunks = partition_pdf(
+                filename=file_path,
+                infer_table_structure=True,
+                strategy="hi_res",
+                extract_image_block_types=["Image"],
+                extract_image_block_to_payload=True,
+                chunking_strategy="by_title",
+                max_characters=10000,
+                combine_text_under_n_chars=2000,
+                new_after_n_chars=6000,
+                languages=["eng", "ind"]
+            )
+            
+            images_base64 = []
+            page_map = {}
+            
+            for idx, chunk in enumerate(chunks):
+                if hasattr(chunk, 'metadata') and hasattr(chunk.metadata, 'page_number'):
+                    page_map[idx] = chunk.metadata.page_number
+                
+                if "CompositeElement" in str(type(chunk)):
+                    chunk_els = chunk.metadata.orig_elements
+                    for el in chunk_els:
+                        if "Image" in str(type(el)):
+                            if hasattr(el.metadata, 'image_base64') and el.metadata.image_base64:
+                                images_base64.append(el.metadata.image_base64)
+            
+            print(f"✅ Extracted {len(chunks)} chunks with unstructured")
+            return chunks, images_base64, page_map
+        
+        except Exception as e:
+            print(f"⚠️ Unstructured failed: {str(e)}")
+            print("📄 Falling back to pdfplumber...")
+    else:
+        print("⚠️ Unstructured not available, using fallback methods")
+    
+    # Method 2: Fallback with pdfplumber (NO POPPLER NEEDED)
+    if PDFPLUMBER_AVAILABLE:  # Add this check too!
+        try:
+            import pdfplumber
+            
+            elements = []
+            images_base64 = []
+            page_map = {}
+            
+            with pdfplumber.open(file_path) as pdf:
+                print(f"📖 Processing {len(pdf.pages)} pages with pdfplumber...")
+                
+                for page_num, page in enumerate(pdf. pages, start=1):
+                    # Extract text
+                    text = page.extract_text()
+                    if text and text.strip():
+                        element = SimpleElement(text, page_num, "text")
+                        elements.append(element)
+                        page_map[len(elements) - 1] = page_num
+                    
+                    # Extract tables
+                    tables = page.extract_tables()
+                    if tables:
+                        for table in tables:
+                            if table: 
+                                # Convert table to text format
+                                table_text = "\n".join([" | ".join([str(cell) if cell else "" for cell in row]) for row in table])
+                                table_html = f"<table>{table_text}</table>"
+                                table_element = SimpleElement(table_html, page_num, "table")
+                                elements.append(table_element)
+                                page_map[len(elements) - 1] = page_num
+            
+            print(f"✅ Extracted {len(elements)} elements with pdfplumber")
+            return elements, images_base64, page_map
+        
+        except Exception as e:
+            print(f"⚠️ pdfplumber failed: {str(e)}")
+    
+    # Method 3: Last fallback with PyPDF2
+    if PYPDF2_AVAILABLE:  # Add this check too!
+        try:
+            from PyPDF2 import PdfReader
+            
+            print("📄 Using PyPDF2 as last fallback...")
+            elements = []
+            images_base64 = []
+            page_map = {}
+            
+            reader = PdfReader(file_path)
+            
+            for page_num, page in enumerate(reader.pages, start=1):
+                text = page.extract_text()
+                if text and text.strip():
+                    element = SimpleElement(text, page_num, "text")
+                    elements.append(element)
+                    page_map[len(elements) - 1] = page_num
+            
+            print(f"✅ Extracted {len(elements)} elements with PyPDF2")
+            return elements, images_base64, page_map
+        
+        except Exception as e:
+            print(f"❌ PyPDF2 failed: {str(e)}")
+    
+    # If all methods fail
+    print(f"❌ All PDF extraction methods failed for {file_path}")
+    return [], [], {}
+
+def extract_elements_from_docx(file_path: str) -> Tuple[List, List[str], Dict]:
+    """
+    Extract elements from DOCX with fallback support
+    Returns: (elements, image_base64_list, page_map)
+    """
+    print(f"🔍 Extracting from DOCX: {file_path}")
+    
+    # Remove the duplicate SimpleElement class here too!
+    
+    # Method 1: Unstructured
+    if UNSTRUCTURED_AVAILABLE:  # Add this check! 
+        try:
+            from unstructured.partition.docx import partition_docx
+            
+            print("📄 Trying unstructured library...")
+            chunks = partition_docx(
+                filename=file_path,
+                chunking_strategy="by_title",
+                max_characters=10000,
+                combine_text_under_n_chars=2000,
+                new_after_n_chars=6000,
+            )
+            
+            images_base64 = []
+            page_map = {}
+            
+            for idx, chunk in enumerate(chunks):
+                if hasattr(chunk, 'metadata') and hasattr(chunk.metadata, 'page_number'):
+                    page_map[idx] = chunk.metadata. page_number
+            
+            print(f"✅ Extracted {len(chunks)} chunks with unstructured")
+            return chunks, images_base64, page_map
+        
+        except Exception as e:
+            print(f"⚠️ Unstructured failed: {str(e)}")
+    else:
+        print("⚠️ Unstructured not available, using fallback methods")
+    
+    # Method 2: Fallback with python-docx
+    if PYTHON_DOCX_AVAILABLE:   # Add this check! 
+        try:
+            from docx import Document
+            
+            print("📄 Using python-docx fallback...")
+            doc = Document(file_path)
+            elements = []
+            page_map = {}
+            
+            for para_idx, para in enumerate(doc.paragraphs):
+                if para.text. strip():
+                    element = SimpleElement(para.text, None, "text")
+                    elements.append(element)
+            
+            # Extract tables
+            for table_idx, table in enumerate(doc. tables):
+                table_text = ""
+                for row in table.rows:
+                    row_text = " | ".join([cell.text for cell in row. cells])
+                    table_text += row_text + "\n"
+                
+                if table_text.strip():
+                    table_element = SimpleElement(f"<table>{table_text}</table>", None, "table")
+                    elements.append(table_element)
+            
+            print(f"✅ Extracted {len(elements)} elements with python-docx")
+            return elements, [], page_map
+        
+        except Exception as e:
+            print(f"❌ python-docx failed: {str(e)}")
+    
+    print(f"❌ All DOCX extraction methods failed for {file_path}")
+    return [], [], {}
+
+def summarize_image_with_gemini(image_base64: str) -> str:
+    """
+    Summarize image using Google Gemini Vision API (gemini-1.5-flash)
+    """
+    try: 
+        # Get Gemini client
+        model = get_gemini_client()
+        
+        # Decode base64 image
+        image_data = base64.b64decode(image_base64)
+        image = Image.open(BytesIO(image_data))
+        
+        prompt = """Describe this image in detail.
+Focus on the key visual elements, text content, charts, diagrams, or any important information.
+Be specific and concise."""
+        
+        # Generate content with image
+        response = model. generate_content([prompt, image])
+        
+        return response.text
+    except Exception as e: 
+        print(f"Error summarizing image with Gemini: {str(e)}")
+        return "Image content could not be processed."
+
+def summarize_text_with_groq(text:  str, groq_client:  Groq) -> str:
+    """Summarize text using Groq"""
+    try:
+        prompt = f"""You are an assistant tasked with summarizing text content.
+Give a concise summary of the following text. 
+Respond only with the summary, no additional comment. 
+
+Text: {text}
+"""
+        
+        response = groq_client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content":  prompt}],
+            temperature=0.5,
+            max_tokens=300
+        )
+        
+        return response.choices[0].message. content
+    except Exception as e: 
+        print(f"Error summarizing text:  {str(e)}")
+        return text[: 500]  # Return first 500 chars as fallback
+
+
+def summarize_table_with_groq(table_html: str, groq_client:  Groq) -> str:
+    """Summarize table using Groq"""
+    try: 
+        prompt = f"""You are an assistant tasked with summarizing tables.
+Give a concise summary of the following table.
+Respond only with the summary, no additional comment. 
+
+Table: {table_html}
+"""
+        
+        response = groq_client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5,
+            max_tokens=300
+        )
+        
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"Error summarizing table: {str(e)}")
+        return table_html[:500]
 
 
 # ========== Advanced Chunking Strategies ==========
@@ -63,20 +385,11 @@ def chunk_text(
 ) -> List[str]:
     """
     Advanced chunking dengan berbagai strategi
-    
-    Args:
-        text: Text to chunk
-        strategy: 'recursive', 'semantic', 'paragraph', or 'simple'
-        max_tokens: Maximum chunk size in characters
-        overlap_tokens: Overlap size in characters
-    
-    Returns:
-        List of text chunks
     """
     if not text:
         return []
 
-    if strategy == "recursive":
+    if strategy == "recursive": 
         text_splitter = RecursiveCharacterTextSplitter(
             separators=["\n\n", "\n", ". ", " ", ""],
             chunk_size=max_tokens,
@@ -94,11 +407,11 @@ def chunk_text(
             if len(current_chunk + sentence) < max_tokens:
                 current_chunk += sentence + ". "
             else:
-                if current_chunk:
+                if current_chunk: 
                     chunks.append(current_chunk. strip())
                 current_chunk = sentence + ". "
 
-        if current_chunk:
+        if current_chunk: 
             chunks.append(current_chunk.strip())
         return chunks
 
@@ -110,12 +423,12 @@ def chunk_text(
         for para in paragraphs:
             if len(current_chunk + para) < max_tokens:
                 current_chunk += para + "\n\n"
-            else:
-                if current_chunk:
+            else: 
+                if current_chunk: 
                     chunks.append(current_chunk.strip())
                 current_chunk = para + "\n\n"
 
-        if current_chunk:
+        if current_chunk: 
             chunks.append(current_chunk.strip())
         return chunks
 
@@ -140,7 +453,7 @@ def chunk_text(
                 current_chunk.append(word)
                 current_length += word_length
 
-        if current_chunk:
+        if current_chunk: 
             chunks.append(" ".join(current_chunk))
 
         return chunks
@@ -161,25 +474,25 @@ def generate_document_summary(text: str, max_length: int = 200) -> str:
     """Generate simple document summary from first sentences"""
     sentences = text.split('.  ')
     summary = ''
-    for sentence in sentences[:3]:
+    for sentence in sentences[: 3]: 
         if len(summary + sentence) < max_length:
             summary += sentence + '. '
         else:
             break
-    return summary. strip() or text[:max_length] + "..."
+    return summary. strip() or text[: max_length] + "..."
 
 
 # ========== LangChain Embeddings Wrapper ==========
 class SentenceTransformerEmbeddings(Embeddings):
     """Wrapper untuk SentenceTransformer agar kompatibel dengan LangChain"""
     
-    def __init__(self, model: SentenceTransformer):
+    def __init__(self, model:  SentenceTransformer):
         self.model = model
     
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: List[str]) -> List[List[float]]: 
         """Embed list of documents"""
         embeddings = self.model.encode(texts, convert_to_numpy=True)
-        return embeddings. tolist()
+        return embeddings.tolist()
     
     def embed_query(self, text: str) -> List[float]:
         """Embed single query"""
@@ -195,29 +508,16 @@ def build_vector_store_with_metadata(
 ) -> Tuple[FAISS, List[DocChunk]]:
     """
     Build LangChain FAISS vector store with proper metadata
-    
-    Args:
-        documents: List of dicts with 'text', 'doc_id', 'chunk_id', 'category', 'keywords', 'metadata'
-        embed_model: SentenceTransformer model
-        show_progress: Show progress bar
-    
-    Returns:
-        (FAISS vector store, List of DocChunk objects)
     """
     if not documents:
         raise ValueError("No documents provided to build vector store")
     
-    # Wrap SentenceTransformer for LangChain compatibility
     embeddings = SentenceTransformerEmbeddings(embed_model)
-    
-    # Get dimension from first embedding
     sample_vec = embed_model.encode(["test"], convert_to_numpy=True)
-    dimension = sample_vec. shape[1]
+    dimension = sample_vec.shape[1]
     
-    # Create FAISS index
     index = faiss.IndexFlatIP(dimension)
     
-    # Create vector store
     vector_store = FAISS(
         embedding_function=embeddings,
         index=index,
@@ -225,7 +525,6 @@ def build_vector_store_with_metadata(
         index_to_docstore_id={},
     )
     
-    # Prepare texts, metadata, and DocChunk objects
     texts = []
     metadatas = []
     doc_chunks = []
@@ -233,16 +532,15 @@ def build_vector_store_with_metadata(
     for doc in tqdm(documents, desc="Building vector store", disable=not show_progress):
         texts.append(doc["text"])
         
-        # Prepare metadata for FAISS
         meta_dict = {
             "doc_id": doc. get("doc_id", "unknown"),
             "chunk_id": doc.get("chunk_id", 0),
             "category": doc.get("category", "unknown"),
             "keywords": doc. get("keywords", ""),
+            "content_type": doc.get("content_type", "text"),
         }
         metadatas.append(meta_dict)
         
-        # Create DocChunk object
         doc_chunk = DocChunk(
             doc_id=doc. get("doc_id", "unknown"),
             chunk_id=doc.get("chunk_id", 0),
@@ -251,11 +549,11 @@ def build_vector_store_with_metadata(
             embedding_model="sentence-transformers/all-mpnet-base-v2",
             chunk_size=doc.get("chunk_size", 1000),
             chunk_overlap=doc.get("chunk_overlap", 100),
-            metadata=doc. get("metadata", None)
+            metadata=doc. get("metadata", None),
+            content_type=doc.get("content_type", "text")
         )
         doc_chunks.append(doc_chunk)
     
-    # Add documents to vector store
     vector_store.add_texts(texts, metadatas=metadatas)
     
     return vector_store, doc_chunks
@@ -270,35 +568,33 @@ def save_vector_store_with_metadata(
     """Save vector store beserta metadata lengkap"""
     os.makedirs(save_path, exist_ok=True)
     
-    # Save vector store (LangChain FAISS format)
     full_path = os.path.join(save_path, index_name)
     vector_store.save_local(full_path)
     
-    # Save metadata chunks
-    metadata_path = os. path.join(save_path, f"{index_name}_metadata. json")
+    metadata_path = os.path.join(save_path, f"{index_name}_metadata.json")
     
     chunks_data = []
     for chunk in chunks:
         chunk_data = {
             "doc_id": chunk.doc_id,
-            "chunk_id": chunk.chunk_id,
-            "text": chunk.text[:500],  # Save first 500 chars for reference
+            "chunk_id":  chunk.chunk_id,
+            "text": chunk.text[: 500],
             "embedding_model": chunk.embedding_model,
             "chunk_size": chunk.chunk_size,
             "chunk_overlap": chunk.chunk_overlap,
             "meta": chunk.meta,
+            "content_type":  chunk.content_type,
         }
         
-        # Add DocumentMetadata if available
         if chunk.metadata:
             chunk_data["metadata"] = {
                 "filename": chunk.metadata.filename,
                 "file_size": chunk.metadata.file_size,
-                "creation_date": chunk.metadata.creation_date.isoformat(),
-                "page_count": chunk.metadata. page_count,
-                "keywords": chunk.metadata.keywords,
-                "summary": chunk.metadata. summary,
-                "document_type": chunk.metadata.document_type,
+                "creation_date": chunk.metadata.creation_date. isoformat(),
+                "page_count": chunk.metadata.page_count,
+                "keywords":  chunk.metadata.keywords,
+                "summary": chunk.metadata.summary,
+                "document_type":  chunk.metadata.document_type,
             }
         
         chunks_data.append(chunk_data)
@@ -306,11 +602,11 @@ def save_vector_store_with_metadata(
     with open(metadata_path, "w", encoding="utf-8") as f:
         json.dump(chunks_data, f, ensure_ascii=False, indent=2)
     
-    print(f"✅ Vector store and metadata saved to: {full_path}")
+    print(f"✅ Vector store and metadata saved to:  {full_path}")
 
 
 def load_vector_store_with_metadata(
-    save_path: str, 
+    save_path:  str, 
     index_name: str, 
     embed_model: SentenceTransformer
 ) -> Tuple[FAISS, List[Dict]]:
@@ -320,20 +616,17 @@ def load_vector_store_with_metadata(
     if not os.path.exists(full_path):
         raise FileNotFoundError(f"Vector store not found at: {full_path}")
     
-    # Wrap embeddings
     embeddings = SentenceTransformerEmbeddings(embed_model)
     
-    # Load vector store
     vector_store = FAISS.load_local(
         full_path, 
         embeddings,
         allow_dangerous_deserialization=True
     )
     
-    # Load metadata
-    metadata_path = os.path.join(save_path, f"{index_name}_metadata.json")
+    metadata_path = os. path.join(save_path, f"{index_name}_metadata. json")
     
-    if os.path. exists(metadata_path):
+    if os.path.exists(metadata_path):
         with open(metadata_path, "r", encoding="utf-8") as f:
             metadata = json.load(f)
     else:
@@ -345,23 +638,12 @@ def load_vector_store_with_metadata(
 
 # ========== Reranking Functions ==========
 def rerank_results(
-    query: str,
+    query:  str,
     results: List[Dict[str, Any]],
     embed_model: SentenceTransformer,
     rerank_method: str = "hybrid"
 ) -> List[Dict[str, Any]]:
-    """
-    Rerank search results menggunakan berbagai metode
-    
-    Args:
-        query: Search query
-        results: List of search results with 'text', 'metadata', 'score'
-        embed_model: SentenceTransformer model
-        rerank_method: 'hybrid', 'keyword', or 'semantic'
-    
-    Returns:
-        Reranked results
-    """
+    """Rerank search results"""
     if not results:
         return results
     
@@ -372,22 +654,15 @@ def rerank_results(
         text = result["text"]
         original_score = result["score"]
         
-        # Keyword overlap score
         doc_words = set(text.lower().split())
-        keyword_overlap = len(query_words.intersection(doc_words)) / max(1, len(query_words))
-        
-        # BM25-like score (simplified)
+        keyword_overlap = len(query_words. intersection(doc_words)) / max(1, len(query_words))
         keyword_score = keyword_overlap
         
-        # Combine scores based on method
         if rerank_method == "hybrid":
-            # Hybrid: 70% semantic, 30% keyword
             combined_score = 0.7 * original_score + 0.3 * keyword_score
         elif rerank_method == "keyword":
-            # Pure keyword matching
             combined_score = keyword_score
-        else:  # semantic
-            # Pure semantic similarity
+        else:
             combined_score = original_score
         
         scored_results.append({
@@ -397,7 +672,6 @@ def rerank_results(
             "combined_score": float(combined_score)
         })
     
-    # Sort by combined score
     scored_results.sort(key=lambda x: x["combined_score"], reverse=True)
     
     return scored_results
@@ -409,28 +683,12 @@ def search_vector_store_with_reranking(
     embed_model: SentenceTransformer,
     k: int = 5,
     rerank_top_k: int = 20,
-    rerank_method: str = "hybrid",
+    rerank_method:  str = "hybrid",
     score_threshold: float = 0.0
 ) -> List[Dict[str, Any]]:
-    """
-    Search vector store dengan reranking
-    
-    Args:
-        vector_store: FAISS vector store
-        query: Search query
-        embed_model: SentenceTransformer model
-        k: Final number of results to return
-        rerank_top_k: Number of results to retrieve before reranking (should be > k)
-        rerank_method: 'hybrid', 'keyword', or 'semantic'
-        score_threshold: Minimum score threshold
-    
-    Returns:
-        List of reranked results
-    """
-    # Step 1: Retrieve more results than needed
+    """Search vector store dengan reranking"""
     initial_results = vector_store.similarity_search_with_score(query, k=rerank_top_k)
     
-    # Convert to dict format
     results = []
     for doc, score in initial_results:
         if score >= score_threshold:
@@ -440,54 +698,121 @@ def search_vector_store_with_reranking(
                 "score": float(score)
             })
     
-    # Step 2: Rerank results
     reranked_results = rerank_results(query, results, embed_model, rerank_method)
     
-    # Step 3: Return top-k after reranking
-    return reranked_results[:k]
+    return reranked_results[: k]
+
+# Add this function to rag_core.py (add it after the answer_with_rag function)
+def detect_language(text:  str) -> str:
+    """
+    Simple language detection based on character patterns
+    Returns:  'indonesian' or 'english'
+    """
+    # Indonesian-specific words
+    indonesian_words = ['yang', 'dan', 'di', 'ke', 'dari', 'untuk', 'pada', 'adalah', 'dalam', 
+                        'dengan', 'ini', 'itu', 'atau', 'juga', 'akan', 'telah', 'ada', 
+                        'apa', 'siapa', 'bagaimana', 'mengapa', 'kapan', 'dimana']
+    
+    # English-specific words
+    english_words = ['the', 'is', 'are', 'was', 'were', 'what', 'who', 'how', 'why', 'when', 
+                     'where', 'which', 'this', 'that', 'these', 'those', 'have', 'has', 'had']
+    
+    text_lower = text.lower()
+    words = text_lower.split()
+    
+    indonesian_count = sum(1 for word in words if word in indonesian_words)
+    english_count = sum(1 for word in words if word in english_words)
+    
+    # Return language with higher count, default to indonesian
+    if english_count > indonesian_count: 
+        return 'english'
+    else:
+        return 'indonesian'
 
 
-# ========== RAG Pipeline ==========
-def make_context(chunks: List[DocChunk]) -> str:
-    """Create context from document chunks"""
+# Update the create_enhanced_context function
+def create_enhanced_context(chunks: List[DocChunk]) -> str:
+    """Create enhanced context from document chunks with page references"""
     parts = []
     for ch in chunks:
-        header = f"[{ch. doc_id} | {ch.meta.get('category', 'unknown')}]\n"
+        content_type = ch.meta.get('content_type', 'text')
+        page_info = f", Halaman {ch.page_number}" if ch.page_number else ""
+        header = f"[{ch.doc_id}{page_info} | {ch.meta.get('category', 'unknown')} | Tipe: {content_type}]\n"
         parts.append(header + ch.text. strip())
     return "\n\n---\n\n".join(parts)
 
 
+# Update answer_with_rag function (replace the existing one)
 def answer_with_rag(query: str, retrieved: List[DocChunk], chat_model: str) -> str:
-    """
-    Generate an answer using the retrieved document snippets and GROQ chat model
-    
-    Args:
-        query: User question
-        retrieved: List of retrieved document chunks
-        chat_model: GROQ model name
-    
-    Returns:
-        Generated answer
-    """
+    """Generate an answer using the retrieved document snippets and GROQ chat model with auto language detection"""
     client = get_groq_client()
     
-    system = """You are an AI assistant for document screening. 
-Your job is to answer the user's question strictly based on the provided document snippets.  
-Answer only based on the provided context. Be concise and do not invent facts.  
-If the answer does not exist in the context, say "Not found in the document." """
+    # Auto-detect language from query
+    language = detect_language(query)
     
-    context = make_context(retrieved)
-    user = f"Question: {query}\n\nRelevant document snippets:\n{context}"
+    # System prompt based on detected language
+    if language == "indonesian": 
+        system_prompt = """Anda adalah asisten AI untuk analisis dokumen. 
+Tugas Anda adalah menjawab pertanyaan pengguna berdasarkan kutipan dokumen yang disediakan.
+Kutipan dapat mencakup konten teks, ringkasan tabel, dan deskripsi gambar. 
+Jawab HANYA berdasarkan konteks yang diberikan.  Berikan jawaban yang ringkas dan jangan mengarang fakta.
+Jika jawabannya tidak ada dalam konteks, katakan "Informasi tidak ditemukan dalam dokumen."
+
+PENTING: Setelah menjawab, SELALU cantumkan referensi dengan format: 
+
+Referensi:
+- [nama_file], halaman [nomor_halaman]
+- [nama_file], halaman [nomor_halaman]
+
+Jika nomor halaman tidak tersedia, cukup tulis: 
+- [nama_file]"""
+    else:
+        system_prompt = """You are an AI assistant for document analysis. 
+Your job is to answer the user's question strictly based on the provided document snippets.
+The snippets may include text content, table summaries, and image descriptions.
+Answer only based on the provided context. Be concise and do not invent facts. 
+If the answer does not exist in the context, say "Not found in the document."
+
+IMPORTANT: After answering, ALWAYS include references in this format:
+
+References:
+- [filename], page [page_number]
+- [filename], page [page_number]
+
+If page number is not available, just write: 
+- [filename]"""
+    
+    # Create enhanced context
+    context = create_enhanced_context(retrieved)
+    
+    # User prompt based on detected language
+    if language == "indonesian":
+        user_prompt = f"""Pertanyaan: {query}
+
+Konteks dokumen yang relevan: 
+{context}
+
+Tolong jawab pertanyaan berdasarkan konteks di atas.  Jika memungkinkan, sebutkan dokumen mana yang menjadi rujukan jawaban Anda."""
+    else:
+        user_prompt = f"""Question:  {query}
+
+Relevant document snippets:
+{context}
+
+Please answer the question based on the context above. If possible, mention which documents were used as references."""
     
     try:
-        resp = client.chat.completions. create(
+        resp = client.chat.completions.create(
             model=chat_model,
             messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
+                {"role":  "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
             ],
             temperature=0.2,
         )
-        return resp.choices[0].message. content
-    except Exception as e:
-        return f"Error generating answer: {str(e)}"
+        return resp.choices[0].message.content
+    except Exception as e: 
+        if language == "indonesian":
+            return f"Kesalahan saat menghasilkan jawaban: {str(e)}"
+        else:
+            return f"Error generating answer:  {str(e)}"
