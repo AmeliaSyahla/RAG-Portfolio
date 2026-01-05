@@ -1,25 +1,20 @@
 import os
 import json
-import faiss
 import time
 import random
-import base64
+from pathlib import Path
 from typing import List, Dict, Tuple, Any, Optional
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from datetime import datetime
 from tqdm import tqdm
 from collections import Counter
-from io import BytesIO
-from PIL import Image
 
 import numpy as np
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-from langchain_community. docstore.in_memory import InMemoryDocstore
-from langchain_core.embeddings import Embeddings
 from dotenv import load_dotenv
+from supabase import create_client, Client
 
 # Import PDF libraries with fallback
 UNSTRUCTURED_AVAILABLE = False
@@ -53,7 +48,10 @@ except ImportError:
     PYTHON_DOCX_AVAILABLE = False
     print("⚠️ python-docx not available")
 
-load_dotenv()
+# Load environment variables
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+ENV_PATH = PROJECT_ROOT / ".env"
+load_dotenv(dotenv_path=ENV_PATH)
 
 # ========== Configuration ==========
 def get_groq_client() -> Groq:
