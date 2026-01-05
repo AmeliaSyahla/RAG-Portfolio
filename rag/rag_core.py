@@ -773,7 +773,7 @@ def create_enhanced_context(chunks: List[DocChunk]) -> str:
     for ch in chunks:
         content_type = ch.meta.get('content_type', 'text')
         page_info = f", Halaman {ch.page_number}" if ch.page_number else ""
-        header = f"[{ch. doc_id}{page_info} | {ch.meta.get('category', 'unknown')} | Tipe: {content_type}]\n"
+        header = f"[{ch.doc_id}{page_info} | {ch.meta.get('category', 'unknown')} | Tipe: {content_type}]\n"
         parts.append(header + ch.text. strip())
     return "\n\n---\n\n".join(parts)
 
@@ -799,76 +799,127 @@ def results_to_doc_chunks(results: List[Dict[str, Any]]) -> List[DocChunk]:
         chunks.append(chunk)
     return chunks
 
-def answer_with_rag(query: str, retrieved:  List[DocChunk], chat_model: str) -> str:
-    """Generate an answer using the retrieved document snippets and GROQ chat model with auto language detection"""
-    client = get_groq_client()
+def answer_with_rag(
+    query: str, 
+    retrieved: List[DocChunk], 
+    chat_model: str,
+    chat_history: Optional[List[Dict[str, str]]] = None
+) -> str:
+    """
+    Generate an answer using:
+    1. Retrieved document snippets (from vector search)  
+    2. Chat history (for conversational context)
+    3. User query
     
-    # Auto-detect language from query
+    Flow:
+    - Documents provide the FACTS
+    - Chat history provides CONTEXT for follow-up questions
+    - LLM synthesizes an answer from both
+    """
+    client = get_groq_client()
     language = detect_language(query)
     
-    # System prompt based on detected language
+    # Build document context from retrieved chunks
+    doc_context = create_enhanced_context(retrieved)
+    
+    # Build chat history summary (last 6 messages = 3 exchanges)
+    history_context = ""
+    if chat_history and len(chat_history) > 0:
+        recent_history = chat_history[-6:] if len(chat_history) > 6 else chat_history
+        history_parts = []
+        for msg in recent_history:
+            role_label = "Pengguna" if msg["role"] == "user" else "Asisten"
+            # Truncate long messages
+            content = msg["content"]
+            if len(content) > 400:
+                content = content[:400] + "..."
+            history_parts.append(f"{role_label}: {content}")
+        history_context = "\n".join(history_parts)
+    
     if language == "indonesian":
-        system_prompt = """Anda adalah asisten AI untuk analisis dokumen. 
-Tugas Anda adalah menjawab pertanyaan pengguna berdasarkan kutipan dokumen yang disediakan.
-Kutipan dapat mencakup konten teks, ringkasan tabel, dan deskripsi gambar.  
-Jawab HANYA berdasarkan konteks yang diberikan.  Berikan jawaban yang ringkas dan jangan mengarang fakta.
-Jika jawabannya tidak ada dalam konteks, katakan "Informasi tidak ditemukan dalam dokumen."
+        system_prompt = """Anda adalah asisten AI untuk analisis dokumen yang dapat melakukan percakapan natural.
 
-PENTING: Setelah menjawab, SELALU cantumkan referensi dengan format:  
+CARA KERJA ANDA:
+1. KONTEKS DOKUMEN berisi kutipan dari dokumen yang diunggah pengguna - ini adalah SUMBER UTAMA jawaban Anda
+2. RIWAYAT PERCAKAPAN membantu Anda memahami konteks pertanyaan follow-up
+3. Kombinasikan keduanya untuk memberikan jawaban yang relevan dan akurat
 
-Referensi:
-- [nama_file], halaman [nomor_halaman]
-- [nama_file], halaman [nomor_halaman]
+CONTOH PENGGUNAAN KONTEKS:
+- Jika pengguna sebelumnya bertanya "apa itu order?" dan sekarang bertanya "berikan contohnya"
+- Anda harus memberikan contoh tentang ORDER berdasarkan dokumen
 
-Jika nomor halaman tidak tersedia, cukup tulis:  
-- [nama_file]"""
+ATURAN: 
+✓ Jawab berdasarkan DOKUMEN yang disediakan
+✓ Gunakan riwayat untuk memahami maksud pertanyaan
+✓ Berikan jawaban yang informatif dan terstruktur
+✓ Sertakan referensi dokumen
+✗ JANGAN mengarang informasi yang tidak ada di dokumen
+✗ JANGAN mengabaikan konteks percakapan"""
+
+        user_prompt = f"""📜 RIWAYAT PERCAKAPAN:
+{history_context if history_context else "(Percakapan baru)"}
+
+📄 KONTEKS DOKUMEN:
+{doc_context}
+
+❓ PERTANYAAN:  {query}
+
+Jawab pertanyaan di atas berdasarkan konteks dokumen.  Pahami maksud pertanyaan dari riwayat percakapan jika diperlukan. 
+
+Format jawaban:
+1. Jawaban langsung dan informatif
+2. Penjelasan atau contoh jika relevan  
+3. Referensi: [nama_dokumen], halaman [nomor]"""
+
     else:
-        system_prompt = """You are an AI assistant for document analysis. 
-Your job is to answer the user's question strictly based on the provided document snippets. 
-The snippets may include text content, table summaries, and image descriptions. 
-Answer only based on the provided context. Be concise and do not invent facts.  
-If the answer does not exist in the context, say "Not found in the document."
+        system_prompt = """You are an AI assistant for document analysis that can hold natural conversations.
 
-IMPORTANT: After answering, ALWAYS include references in this format:
+HOW YOU WORK:
+1. DOCUMENT CONTEXT contains excerpts from user-uploaded documents - this is your PRIMARY SOURCE
+2. CHAT HISTORY helps you understand follow-up questions
+3. Combine both to provide relevant and accurate answers
 
-References:
-- [filename], page [page_number]
-- [filename], page [page_number]
+EXAMPLE: 
+- If user previously asked "what is order?" and now asks "give an example"
+- You should provide examples about ORDER based on the documents
 
-If page number is not available, just write: 
-- [filename]"""
-    
-    # Create enhanced context
-    context = create_enhanced_context(retrieved)
-    
-    # User prompt based on detected language
-    if language == "indonesian":
-        user_prompt = f"""Pertanyaan: {query}
+RULES:
+✓ Answer based on PROVIDED DOCUMENTS
+✓ Use history to understand question intent
+✓ Give informative, structured answers
+✓ Include document references
+✗ DO NOT make up information not in documents
+✗ DO NOT ignore conversation context"""
 
-Konteks dokumen yang relevan:  
-{context}
+        user_prompt = f"""📜 CHAT HISTORY: 
+{history_context if history_context else "(New conversation)"}
 
-Tolong jawab pertanyaan berdasarkan konteks di atas. Jika memungkinkan, sebutkan dokumen mana yang menjadi rujukan jawaban Anda."""
-    else:
-        user_prompt = f"""Question: {query}
+📄 DOCUMENT CONTEXT:
+{doc_context}
 
-Relevant document snippets:
-{context}
+❓ QUESTION:  {query}
 
-Please answer the question based on the context above. If possible, mention which documents were used as references."""
-    
+Answer the question above based on document context.  Understand the question intent from chat history if needed.
+
+Format: 
+1. Direct, informative answer
+2. Explanation or examples if relevant
+3. References: [document_name], page [number]"""
+
     try:
-        resp = client.chat.completions. create(
+        resp = client.chat.completions.create(
             model=chat_model,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content":  user_prompt},
+                {"role": "user", "content": user_prompt},
             ],
-            temperature=0.2,
+            temperature=0.3,
+            max_tokens=1500,
         )
-        return resp.choices[0].message. content
+        return resp.choices[0].message.content
     except Exception as e: 
+        error_msg = str(e)
         if language == "indonesian":
-            return f"Kesalahan saat menghasilkan jawaban: {str(e)}"
-        else:
-            return f"Error generating answer: {str(e)}"
+            return f"Kesalahan saat menghasilkan jawaban: {error_msg}"
+        else: 
+            return f"Error generating answer:  {error_msg}"
