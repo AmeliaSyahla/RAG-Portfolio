@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from rag. rag_core import (
+from rag.rag_core import (
     extract_elements_from_pdf,
     extract_elements_from_docx,
     summarize_text_with_groq,

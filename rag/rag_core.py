@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 UNSTRUCTURED_AVAILABLE = False
 try:
     from unstructured.partition.pdf import partition_pdf
-    from unstructured.partition. docx import partition_docx
+    from unstructured.partition.docx import partition_docx
     UNSTRUCTURED_AVAILABLE = True
     print("✅ Unstructured library available")
 except ImportError:
