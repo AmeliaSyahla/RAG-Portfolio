@@ -61,7 +61,18 @@ def get_groq_client() -> Groq:
         raise RuntimeError("GROQ_API_KEY not set.  Provide it via env or a . env file.")
     return Groq(api_key=api_key)
 
-# REMOVED: get_gemini_client() function - no longer needed
+def get_supabase_client() -> Client:
+    """Get Supabase client"""
+    url = os. environ.get("SUPABASE_URL", "").strip()
+    key = os.environ.get("SUPABASE_SERVICE_KEY", "").strip()
+    
+    if not url or not key: 
+        raise RuntimeError(
+            "SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in .env file.\n"
+            "Get these from:  Supabase Dashboard → Settings → API"
+        )
+    
+    return create_client(url, key)
 
 # ========== Document Metadata Dataclass ==========
 @dataclass
@@ -144,7 +155,7 @@ def extract_elements_from_pdf(file_path: str, output_path: str = "./content/") -
                     chunk_els = chunk.metadata.orig_elements
                     for el in chunk_els:
                         if "Image" in str(type(el)):
-                            if hasattr(el. metadata, 'image_base64') and el.metadata.image_base64:
+                            if hasattr(el.metadata, 'image_base64') and el.metadata.image_base64:
                                 images_base64.append(el.metadata. image_base64)
             
             print(f"✅ Extracted {len(chunks)} chunks with unstructured")
@@ -159,8 +170,6 @@ def extract_elements_from_pdf(file_path: str, output_path: str = "./content/") -
     # Method 2: Fallback with pdfplumber (NO POPPLER NEEDED)
     if PDFPLUMBER_AVAILABLE:
         try:
-            import pdfplumber
-            
             elements = []
             images_base64 = []
             page_map = {}
@@ -197,8 +206,6 @@ def extract_elements_from_pdf(file_path: str, output_path: str = "./content/") -
     # Method 3: Last fallback with PyPDF2
     if PYPDF2_AVAILABLE: 
         try:
-            from PyPDF2 import PdfReader
-            
             print("📄 Using PyPDF2 as last fallback...")
             elements = []
             images_base64 = []
@@ -226,15 +233,12 @@ def extract_elements_from_pdf(file_path: str, output_path: str = "./content/") -
 def extract_elements_from_docx(file_path: str) -> Tuple[List, List[str], Dict]:
     """
     Extract elements from DOCX with fallback support
-    Returns: (elements, image_base64_list, page_map)
     """
     print(f"🔍 Extracting from DOCX: {file_path}")
     
     # Method 1: Unstructured
     if UNSTRUCTURED_AVAILABLE:
         try:
-            from unstructured.partition. docx import partition_docx
-            
             print("📄 Trying unstructured library...")
             chunks = partition_docx(
                 filename=file_path,
@@ -249,7 +253,7 @@ def extract_elements_from_docx(file_path: str) -> Tuple[List, List[str], Dict]:
             
             for idx, chunk in enumerate(chunks):
                 if hasattr(chunk, 'metadata') and hasattr(chunk.metadata, 'page_number'):
-                    page_map[idx] = chunk.metadata. page_number
+                    page_map[idx] = chunk.metadata.page_number
             
             print(f"✅ Extracted {len(chunks)} chunks with unstructured")
             return chunks, images_base64, page_map
@@ -262,20 +266,18 @@ def extract_elements_from_docx(file_path: str) -> Tuple[List, List[str], Dict]:
     # Method 2: Fallback with python-docx
     if PYTHON_DOCX_AVAILABLE: 
         try:
-            from docx import Document
-            
             print("📄 Using python-docx fallback...")
             doc = Document(file_path)
             elements = []
             page_map = {}
             
-            for para_idx, para in enumerate(doc.paragraphs):
-                if para.text. strip():
+            for para in doc.paragraphs:
+                if para.text.strip():
                     element = SimpleElement(para.text, None, "text")
                     elements.append(element)
             
             # Extract tables
-            for table_idx, table in enumerate(doc. tables):
+            for table in doc.tables:
                 table_text = ""
                 for row in table.rows:
                     row_text = " | ".join([cell.text for cell in row. cells])
@@ -297,7 +299,6 @@ def extract_elements_from_docx(file_path: str) -> Tuple[List, List[str], Dict]:
 def summarize_image_with_groq(image_base64: str, groq_client: Groq) -> str:
     """
     Summarize image using Groq's Llama 4 Scout Vision model
-    Model: meta-llama/llama-4-scout-17b-16e-instruct
     """
     try:
         prompt = """Describe this image in detail. 
@@ -305,7 +306,7 @@ Focus on the key visual elements, text content, charts, diagrams, or any importa
 Be specific and concise."""
         
         # Create message with image
-        response = groq_client.chat. completions.create(
+        response = groq_client.chat.completions.create(
             model="meta-llama/llama-4-scout-17b-16e-instruct",
             messages=[
                 {
@@ -327,8 +328,7 @@ Be specific and concise."""
             temperature=1,
             max_tokens=500,
             top_p=1,
-            stream=False,
-            stop=None
+            stream=False
         )
         
         return response.choices[0].message.content
@@ -387,7 +387,7 @@ Respond only with the summary, no additional comment.
 Table: {table_html}
 """
         
-        response = groq_client.chat. completions.create(
+        response = groq_client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.5,
@@ -449,11 +449,11 @@ def chunk_text(
                 current_chunk += para + "\n\n"
             else:
                 if current_chunk:
-                    chunks.append(current_chunk. strip())
+                    chunks.append(current_chunk.strip())
                 current_chunk = para + "\n\n"
 
         if current_chunk:
-            chunks.append(current_chunk. strip())
+            chunks.append(current_chunk.strip())
         return chunks
 
     else:  # simple
@@ -507,158 +507,176 @@ def generate_document_summary(text: str, max_length: int = 200) -> str:
 
 
 # ========== LangChain Embeddings Wrapper ==========
-class SentenceTransformerEmbeddings(Embeddings):
-    """Wrapper untuk SentenceTransformer agar kompatibel dengan LangChain"""
+# ========== Supabase Vector Store Class ==========
+class SupabaseVectorStore:
+    """Vector store using Supabase pgvector"""
     
-    def __init__(self, model:  SentenceTransformer):
-        self.model = model
-    
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed list of documents"""
-        embeddings = self.model.encode(texts, convert_to_numpy=True)
-        return embeddings.tolist()
-    
-    def embed_query(self, text: str) -> List[float]:
-        """Embed single query"""
-        embedding = self.model.encode([text], convert_to_numpy=True)
-        return embedding[0].tolist()
-
-
-# ========== Vector Store Operations ==========
-def build_vector_store_with_metadata(
-    documents: List[Dict[str, Any]],
-    embed_model: SentenceTransformer,
-    show_progress: bool = True
-) -> Tuple[FAISS, List[DocChunk]]:
-    """
-    Build LangChain FAISS vector store with proper metadata
-    """
-    if not documents:
-        raise ValueError("No documents provided to build vector store")
-    
-    embeddings = SentenceTransformerEmbeddings(embed_model)
-    sample_vec = embed_model.encode(["test"], convert_to_numpy=True)
-    dimension = sample_vec.shape[1]
-    
-    index = faiss.IndexFlatIP(dimension)
-    
-    vector_store = FAISS(
-        embedding_function=embeddings,
-        index=index,
-        docstore=InMemoryDocstore(),
-        index_to_docstore_id={},
-    )
-    
-    texts = []
-    metadatas = []
-    doc_chunks = []
-    
-    for doc in tqdm(documents, desc="Building vector store", disable=not show_progress):
-        texts.append(doc["text"])
+    def __init__(self, embed_model: SentenceTransformer, table_name: str = "document_chunks"):
+        self.client = get_supabase_client()
+        self.embed_model = embed_model
+        self.table_name = table_name
+        self.dimension = 768  # for all-mpnet-base-v2
         
-        meta_dict = {
-            "doc_id": doc. get("doc_id", "unknown"),
-            "chunk_id": doc.get("chunk_id", 0),
-            "category": doc.get("category", "unknown"),
-            "keywords": doc.get("keywords", ""),
-            "content_type": doc.get("content_type", "text"),
-        }
-        metadatas.append(meta_dict)
+        # Verify connection
+        try:
+            count = self.get_document_count()
+            print(f"✅ Connected to Supabase.  Current documents: {count}")
+        except Exception as e:
+            print(f"⚠️ Supabase connection warning: {str(e)}")
+    
+    def add_documents(
+        self,
+        documents: List[Dict[str, Any]],
+        show_progress: bool = True
+    ) -> int:
+        """Add documents to Supabase vector store"""
+        if not documents:
+            return 0
         
-        doc_chunk = DocChunk(
-            doc_id=doc. get("doc_id", "unknown"),
-            chunk_id=doc.get("chunk_id", 0),
-            text=doc["text"],
-            meta=meta_dict,
-            embedding_model="sentence-transformers/all-mpnet-base-v2",
-            chunk_size=doc.get("chunk_size", 1000),
-            chunk_overlap=doc.get("chunk_overlap", 100),
-            metadata=doc. get("metadata", None),
-            content_type=doc.get("content_type", "text")
-        )
-        doc_chunks.append(doc_chunk)
-    
-    vector_store.add_texts(texts, metadatas=metadatas)
-    
-    return vector_store, doc_chunks
-
-
-def save_vector_store_with_metadata(
-    vector_store: FAISS, 
-    chunks: List[DocChunk], 
-    save_path: str, 
-    index_name: str
-):
-    """Save vector store beserta metadata lengkap"""
-    os.makedirs(save_path, exist_ok=True)
-    
-    full_path = os.path.join(save_path, index_name)
-    vector_store.save_local(full_path)
-    
-    metadata_path = os.path.join(save_path, f"{index_name}_metadata.json")
-    
-    chunks_data = []
-    for chunk in chunks:
-        chunk_data = {
-            "doc_id": chunk.doc_id,
-            "chunk_id":  chunk.chunk_id,
-            "text": chunk.text[: 500],
-            "embedding_model": chunk.embedding_model,
-            "chunk_size": chunk.chunk_size,
-            "chunk_overlap": chunk.chunk_overlap,
-            "meta": chunk.meta,
-            "content_type": chunk.content_type,
-        }
+        total_added = 0
         
-        if chunk.metadata:
-            chunk_data["metadata"] = {
-                "filename": chunk.metadata.filename,
-                "file_size": chunk.metadata.file_size,
-                "creation_date": chunk.metadata.creation_date. isoformat(),
-                "page_count": chunk.metadata.page_count,
-                "keywords": chunk.metadata.keywords,
-                "summary": chunk.metadata.summary,
-                "document_type": chunk.metadata. document_type,
-            }
+        for doc in tqdm(documents, desc="Adding to Supabase", disable=not show_progress):
+            try:
+                # Generate embedding for this document
+                text = doc["text"]
+                embedding = self. embed_model.encode([text], convert_to_numpy=True)[0]
+                embedding_list = [float(x) for x in embedding. tolist()]
+                
+                # Prepare metadata
+                metadata = {
+                    "category": doc. get("category", "unknown"),
+                    "keywords": doc.get("keywords", ""),
+                    "page_number": doc.get("page_number"),
+                    "filename": doc.get("filename", doc.get("doc_id", "")),
+                    "chunk_size": doc.get("chunk_size", 1000),
+                    "chunk_overlap": doc.get("chunk_overlap", 100),
+                }
+                
+                record = {
+                    "doc_id": doc. get("doc_id", "unknown"),
+                    "chunk_id": doc.get("chunk_id", 0),
+                    "content": text,
+                    "content_type": doc.get("content_type", "text"),
+                    "embedding": embedding_list,
+                    "metadata":  metadata
+                }
+                
+                self.client.table(self.table_name).insert(record).execute()
+                total_added += 1
+                
+            except Exception as e:
+                print(f"❌ Error inserting document: {str(e)}")
         
-        chunks_data.append(chunk_data)
+        print(f"✅ Added {total_added}/{len(documents)} documents to Supabase")
+        return total_added
     
-    with open(metadata_path, "w", encoding="utf-8") as f:
-        json.dump(chunks_data, f, ensure_ascii=False, indent=2)
+    def similarity_search(
+        self,
+        query: str,
+        k: int = 5,
+        filter_doc_id: Optional[str] = None,
+        score_threshold: float = 0.0
+    ) -> List[Dict[str, Any]]:
+        """Search for similar documents using pgvector"""
+        # Generate query embedding
+        query_embedding = self.embed_model.encode([query], convert_to_numpy=True)[0]
+        embedding_list = [float(x) for x in query_embedding.tolist()]
+        
+        print(f"🔍 Searching for:  '{query[: 50]}...'")
+        
+        try:
+            response = self.client.rpc(
+                "match_documents",
+                {
+                    "query_embedding": embedding_list,
+                    "match_count": k,
+                    "filter_doc_id": filter_doc_id
+                }
+            ).execute()
+            
+            print(f"✅ Search returned {len(response. data)} results")
+            
+            results = []
+            for row in response.data:
+                similarity = float(row. get("similarity", 0))
+                
+                if similarity >= score_threshold:
+                    metadata = row.get("metadata", {})
+                    if isinstance(metadata, str):
+                        try:
+                            metadata = json. loads(metadata)
+                        except:
+                            metadata = {}
+                    
+                    results.append({
+                        "id": row.get("id"),
+                        "doc_id": row.get("doc_id"),
+                        "chunk_id": row.get("chunk_id"),
+                        "text": row.get("content"),
+                        "content_type": row.get("content_type"),
+                        "metadata": metadata,
+                        "score": similarity
+                    })
+                    
+                    print(f"  - Score: {similarity:.4f} | {row.get('doc_id')} | {row.get('content', '')[:50]}...")
+            
+            return results
+        
+        except Exception as e: 
+            print(f"❌ Search error: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return []
     
-    print(f"✅ Vector store and metadata saved to:  {full_path}")
-
-
-def load_vector_store_with_metadata(
-    save_path:  str, 
-    index_name: str, 
-    embed_model: SentenceTransformer
-) -> Tuple[FAISS, List[Dict]]:
-    """Load vector store beserta metadata"""
-    full_path = os. path.join(save_path, index_name)
+    def delete_by_doc_id(self, doc_id: str) -> int:
+        """Delete all chunks for a specific document"""
+        try: 
+            response = self.client. table(self.table_name).delete().eq("doc_id", doc_id).execute()
+            deleted_count = len(response.data) if response.data else 0
+            print(f"✅ Deleted {deleted_count} chunks for doc_id: {doc_id}")
+            return deleted_count
+        except Exception as e:
+            print(f"❌ Error deleting document: {str(e)}")
+            return 0
     
-    if not os.path.exists(full_path):
-        raise FileNotFoundError(f"Vector store not found at: {full_path}")
+    def delete_all(self) -> int:
+        """Delete all documents from the vector store"""
+        try: 
+            response = self.client.table(self.table_name).delete().neq("id", 0).execute()
+            deleted_count = len(response.data) if response.data else 0
+            print(f"✅ Deleted all {deleted_count} documents")
+            return deleted_count
+        except Exception as e:
+            print(f"❌ Error deleting all documents: {str(e)}")
+            return 0
     
-    embeddings = SentenceTransformerEmbeddings(embed_model)
+    def get_all_doc_ids(self) -> List[str]:
+        """Get all unique document IDs"""
+        try:
+            response = self.client.table(self. table_name).select("doc_id").execute()
+            doc_ids = list(set(row["doc_id"] for row in response.data))
+            return doc_ids
+        except Exception as e:
+            print(f"❌ Error getting doc IDs: {str(e)}")
+            return []
     
-    vector_store = FAISS.load_local(
-        full_path, 
-        embeddings,
-        allow_dangerous_deserialization=True
-    )
+    def get_document_count(self) -> int:
+        """Get total number of chunks in the store"""
+        try:
+            response = self.client.table(self.table_name).select("id", count="exact").execute()
+            return response.count or 0
+        except Exception as e:
+            print(f"❌ Error getting count: {str(e)}")
+            return 0
     
-    metadata_path = os. path.join(save_path, f"{index_name}_metadata. json")
-    
-    if os.path.exists(metadata_path):
-        with open(metadata_path, "r", encoding="utf-8") as f:
-            metadata = json.load(f)
-    else:
-        metadata = []
-    
-    print(f"✅ Vector store and metadata loaded from: {full_path}")
-    return vector_store, metadata
-
+    def document_exists(self, doc_id: str) -> bool:
+        """Check if a document already exists"""
+        try:
+            response = self.client.table(self.table_name).select("id").eq("doc_id", doc_id).limit(1).execute()
+            return len(response.data) > 0
+        except Exception as e: 
+            print(f"❌ Error checking document:  {str(e)}")
+            return False
 
 # ========== Reranking Functions ==========
 def rerank_results(
@@ -702,27 +720,23 @@ def rerank_results(
 
 
 def search_vector_store_with_reranking(
-    vector_store:  FAISS,
-    query: str,
+    vector_store: SupabaseVectorStore,
+    query:  str,
     embed_model: SentenceTransformer,
     k: int = 5,
     rerank_top_k: int = 20,
     rerank_method:  str = "hybrid",
     score_threshold: float = 0.0
-) -> List[Dict[str, Any]]:
+) -> List[Dict[str, Any]]: 
     """Search vector store dengan reranking"""
-    initial_results = vector_store.similarity_search_with_score(query, k=rerank_top_k)
-    
-    results = []
-    for doc, score in initial_results:
-        if score >= score_threshold:
-            results.append({
-                "text": doc.page_content,
-                "metadata": doc.metadata,
-                "score": float(score)
-            })
-    
-    reranked_results = rerank_results(query, results, embed_model, rerank_method)
+    # Get initial results from Supabase
+    initial_results = vector_store.similarity_search(
+        query=query,
+        k=rerank_top_k,
+        score_threshold=score_threshold
+    )
+    # Rerank results
+    reranked_results = rerank_results(query, initial_results, embed_model, rerank_method)
     
     return reranked_results[: k]
 
@@ -763,6 +777,27 @@ def create_enhanced_context(chunks: List[DocChunk]) -> str:
         parts.append(header + ch.text. strip())
     return "\n\n---\n\n".join(parts)
 
+def results_to_doc_chunks(results: List[Dict[str, Any]]) -> List[DocChunk]:
+    """Convert search results to DocChunk objects"""
+    chunks = []
+    for result in results:
+        metadata = result.get("metadata", {})
+        chunk = DocChunk(
+            doc_id=result. get("doc_id", "unknown"),
+            chunk_id=result.get("chunk_id", 0),
+            text=result["text"],
+            meta={
+                "category": metadata.get("category", "unknown"),
+                "keywords": metadata.get("keywords", ""),
+                "content_type": result.get("content_type", "text"),
+                "doc_id": result.get("doc_id", "unknown"),
+                "chunk_id": result.get("chunk_id", 0),
+            },
+            content_type=result.get("content_type", "text"),
+            page_number=metadata.get("page_number")
+        )
+        chunks.append(chunk)
+    return chunks
 
 def answer_with_rag(query: str, retrieved:  List[DocChunk], chat_model: str) -> str:
     """Generate an answer using the retrieved document snippets and GROQ chat model with auto language detection"""
