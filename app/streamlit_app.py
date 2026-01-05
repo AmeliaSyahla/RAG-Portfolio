@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from rag. rag_core import (
+from rag.rag_core import (
     extract_elements_from_pdf,
     extract_elements_from_docx,
     summarize_text_with_groq,
@@ -73,7 +73,6 @@ def extract_references(chunks: List[DocChunk]) -> List[Dict[str, Any]]:
 # ========== Page Configuration ==========
 st.set_page_config(
     page_title="RAG Chatbot",
-    page_icon="📚",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -374,7 +373,7 @@ def add_custom_css():
             transform: translateX(-50%);
             width: 90%;
             max-width: 850px;
-            background: rgba(255, 255, 255, 0.05); /* Warna background Pil */
+            background: rgba(38, 39, 48); /* Warna background Pil */
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
             padding: 8px 12px;
@@ -833,7 +832,6 @@ status_text = f"{st.session_state.total_chunks} chunks" if st.session_state.supa
 st.markdown(f"""
     <div class="top-navbar">
         <div class="navbar-brand">
-            <span class="navbar-logo">📚</span>
             <span class="navbar-title">RAG Chatbot</span>
         </div>
         <div class="navbar-status">
@@ -1044,8 +1042,6 @@ else:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ========== Fixed Input Area ==========
-# Container untuk background blur (fixed footer)
-st.markdown('<div class="input-container"></div>', unsafe_allow_html=True)
 
 # Layout Kolom Input
 col_upload, col_input, col_send = st.columns([1, 14, 1])
@@ -1080,7 +1076,7 @@ if ask_button and query:
     else:
         st.session_state.chat_messages.append({"role":  "user", "content": query})
         
-        with st.spinner("💭 Thinking..."):
+        with st.spinner("Thinking..."):
             try:
                 session_id = st.session_state.session_id
                 current_history = st.session_state.chat_messages[:-1]
