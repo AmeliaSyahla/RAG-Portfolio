@@ -482,7 +482,6 @@ def chunk_text(
 
         return chunks
 
-
 # ========== Document Metadata Helpers ==========
 def extract_keywords_simple(text: str, top_n: int = 10) -> List[str]:
     """Extract simple keywords from text based on word frequency"""
