@@ -20,7 +20,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 
 # GROQ client from rag_core
-from rag. rag_core import get_groq_client, detect_language
+from rag.rag_core import get_groq_client, detect_language
 from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent

@@ -849,7 +849,7 @@ col_spacer1, col_model, col_spacer2 = st.columns([1, 2, 1])
 with col_model:
     with st.container():
         st.markdown('<div class="model-btn">', unsafe_allow_html=True)
-        if st.button(f"🤖 {st.session_state.chat_model}", key="model_btn", use_container_width=True):
+        if st.button(f"{st.session_state.chat_model}", key="model_btn", use_container_width=True):
             st.session_state.show_model_selector = not st.session_state. show_model_selector
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -858,7 +858,7 @@ with col_model:
 if st.session_state.show_model_selector:
     @st.dialog("⚙️ Settings")
     def show_model_settings():
-        st.markdown("#### 🤖 Model Selection")
+        st.markdown("#### Model Selection")
         chat_model = st.selectbox(
             "Chat Model",
             options=["llama-3.1-8b-instant", "mixtral-8x7b-32768"],
@@ -999,7 +999,6 @@ if not st.session_state.chat_messages:
     # Welcome Screen
     st.markdown("""
         <div class="welcome-container">
-            <div class="welcome-icon">🤖</div>
             <div class="welcome-title">Apa yang bisa saya bantu? </div>
             <div class="welcome-subtitle">
                 Upload dokumen Anda dan mulai bertanya.  Saya akan membantu mencari informasi dari dokumen yang Anda berikan.
